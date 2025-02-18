@@ -1534,6 +1534,11 @@
 <a href="#1534" id="1534">1534</a>
 <a href="#1535" id="1535">1535</a>
 <a href="#1536" id="1536">1536</a>
+<a href="#1537" id="1537">1537</a>
+<a href="#1538" id="1538">1538</a>
+<a href="#1539" id="1539">1539</a>
+<a href="#1540" id="1540">1540</a>
+<a href="#1541" id="1541">1541</a>
 </pre></div><pre class="rust"><code><span class="comment">// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -2133,7 +2138,7 @@
 }
 
 <span class="doccomment">/// The type of files tracked by the manifest, either data or delete files; Data(0) for all v1 manifests
-</span><span class="attr">#[derive(Debug, PartialEq, Clone, Eq)]
+</span><span class="attr">#[derive(Debug, PartialEq, Clone, Copy, Eq)]
 </span><span class="kw">pub enum </span>ManifestContentType {
     <span class="doccomment">/// The manifest content is data.
     </span>Data = <span class="number">0</span>,
@@ -2393,12 +2398,16 @@
                 contains_nan: <span class="self">self</span>.contains_nan,
                 lower_bound: <span class="self">self
                     </span>.lower_bound
-                    .map(|v| Datum::try_from_bytes(<span class="kw-2">&amp;</span>v, r#type.clone()))
-                    .transpose()<span class="question-mark">?</span>,
+                    .as_ref()
+                    .map(|v| Datum::try_from_bytes(v, r#type.clone()))
+                    .transpose()
+                    .map_err(|err| err.with_context(<span class="string">"type"</span>, <span class="macro">format!</span>(<span class="string">"{:?}"</span>, r#type)))<span class="question-mark">?</span>,
                 upper_bound: <span class="self">self
                     </span>.upper_bound
-                    .map(|v| Datum::try_from_bytes(<span class="kw-2">&amp;</span>v, r#type.clone()))
-                    .transpose()<span class="question-mark">?</span>,
+                    .as_ref()
+                    .map(|v| Datum::try_from_bytes(v, r#type.clone()))
+                    .transpose()
+                    .map_err(|err| err.with_context(<span class="string">"type"</span>, <span class="macro">format!</span>(<span class="string">"{:?}"</span>, r#type)))<span class="question-mark">?</span>,
             })
         }
     }
@@ -2509,21 +2518,22 @@
 
     <span class="kw">fn </span>convert_to_serde_field_summary(
         partitions: Vec&lt;<span class="kw">super</span>::FieldSummary&gt;,
-    ) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;FieldSummary&gt;&gt; {
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;FieldSummary&gt;&gt;&gt; {
         <span class="kw">if </span>partitions.is_empty() {
-            <span class="prelude-val">None
-        </span>} <span class="kw">else </span>{
-            <span class="prelude-val">Some</span>(
-                partitions
-                    .into_iter()
-                    .map(|v| FieldSummary {
-                        contains_null: v.contains_null,
-                        contains_nan: v.contains_nan,
-                        lower_bound: v.lower_bound.map(|v| v.to_bytes()),
-                        upper_bound: v.upper_bound.map(|v| v.to_bytes()),
-                    })
-                    .collect(),
-            )
+            <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
+        } <span class="kw">else </span>{
+            <span class="kw">let </span><span class="kw-2">mut </span>vs = Vec::with_capacity(partitions.len());
+
+            <span class="kw">for </span>v <span class="kw">in </span>partitions {
+                <span class="kw">let </span>fs = FieldSummary {
+                    contains_null: v.contains_null,
+                    contains_nan: v.contains_nan,
+                    lower_bound: v.lower_bound.map(|v| v.to_bytes()).transpose()<span class="question-mark">?</span>,
+                    upper_bound: v.upper_bound.map(|v| v.to_bytes()).transpose()<span class="question-mark">?</span>,
+                };
+                vs.push(fs);
+            }
+            <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(vs))
         }
     }
 
@@ -2539,7 +2549,7 @@
         <span class="kw">type </span>Error = Error;
 
         <span class="kw">fn </span>try_from(value: ManifestFile) -&gt; std::result::Result&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
-            <span class="kw">let </span>partitions = convert_to_serde_field_summary(value.partitions);
+            <span class="kw">let </span>partitions = convert_to_serde_field_summary(value.partitions)<span class="question-mark">?</span>;
             <span class="kw">let </span>key_metadata = convert_to_serde_key_metadata(value.key_metadata);
             <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
                 manifest_path: value.manifest_path,
@@ -2613,7 +2623,7 @@
         <span class="kw">type </span>Error = Error;
 
         <span class="kw">fn </span>try_from(value: ManifestFile) -&gt; std::result::Result&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
-            <span class="kw">let </span>partitions = convert_to_serde_field_summary(value.partitions);
+            <span class="kw">let </span>partitions = convert_to_serde_field_summary(value.partitions)<span class="question-mark">?</span>;
             <span class="kw">let </span>key_metadata = convert_to_serde_key_metadata(value.key_metadata);
             <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
                 manifest_path: value.manifest_path,

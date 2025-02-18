@@ -199,9 +199,6 @@
 <a href="#199" id="199">199</a>
 <a href="#200" id="200">200</a>
 <a href="#201" id="201">201</a>
-<a href="#202" id="202">202</a>
-<a href="#203" id="203">203</a>
-<a href="#204" id="204">204</a>
 </pre></div><pre class="rust"><code><span class="comment">// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -229,10 +226,9 @@
 <span class="kw">use </span>datafusion::error::Result <span class="kw">as </span>DFResult;
 <span class="kw">use </span>datafusion::execution::{SendableRecordBatchStream, TaskContext};
 <span class="kw">use </span>datafusion::physical_expr::EquivalenceProperties;
+<span class="kw">use </span>datafusion::physical_plan::execution_plan::{Boundedness, EmissionType};
 <span class="kw">use </span>datafusion::physical_plan::stream::RecordBatchStreamAdapter;
-<span class="kw">use </span>datafusion::physical_plan::{
-    DisplayAs, ExecutionMode, ExecutionPlan, Partitioning, PlanProperties,
-};
+<span class="kw">use </span>datafusion::physical_plan::{DisplayAs, ExecutionPlan, Partitioning, PlanProperties};
 <span class="kw">use </span>datafusion::prelude::Expr;
 <span class="kw">use </span>futures::{Stream, TryStreamExt};
 <span class="kw">use </span>iceberg::expr::Predicate;
@@ -249,8 +245,6 @@
     </span>table: Table,
     <span class="doccomment">/// Snapshot of the table to scan.
     </span>snapshot_id: <span class="prelude-ty">Option</span>&lt;i64&gt;,
-    <span class="doccomment">/// A reference-counted arrow `Schema`.
-    </span>schema: ArrowSchemaRef,
     <span class="doccomment">/// Stores certain, often expensive to compute,
     /// plan properties used in query optimization.
     </span>plan_properties: PlanProperties,
@@ -280,7 +274,6 @@
         <span class="self">Self </span>{
             table,
             snapshot_id,
-            schema,
             plan_properties,
             projection,
             predicates,
@@ -295,7 +288,8 @@
         </span>PlanProperties::new(
             EquivalenceProperties::new(schema),
             Partitioning::UnknownPartitioning(<span class="number">1</span>),
-            ExecutionMode::Bounded,
+            EmissionType::Incremental,
+            Boundedness::Bounded,
         )
     }
 }
@@ -338,7 +332,7 @@
         <span class="kw">let </span>stream = futures::stream::once(fut).try_flatten();
 
         <span class="prelude-val">Ok</span>(Box::pin(RecordBatchStreamAdapter::new(
-            <span class="self">self</span>.schema.clone(),
+            <span class="self">self</span>.schema(),
             stream,
         )))
     }

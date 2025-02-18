@@ -289,6 +289,11 @@
 <a href="#289" id="289">289</a>
 <a href="#290" id="290">290</a>
 <a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
 </pre></div><pre class="rust"><code><span class="comment">// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -308,14 +313,15 @@
 
 </span><span class="kw">use </span>std::sync::Arc;
 
-<span class="kw">use </span>arrow_array::{ArrayRef, RecordBatch, StructArray};
+<span class="kw">use </span>arrow_array::{make_array, ArrayRef, RecordBatch, StructArray};
+<span class="kw">use </span>arrow_buffer::NullBuffer;
 <span class="kw">use </span>arrow_schema::{DataType, Field, FieldRef, Fields, Schema, SchemaRef};
 
 <span class="kw">use </span><span class="kw">crate</span>::error::Result;
 <span class="kw">use crate</span>::{Error, ErrorKind};
 
 <span class="doccomment">/// Help to project specific field from `RecordBatch`` according to the fields id.
-</span><span class="attr">#[derive(Clone)]
+</span><span class="attr">#[derive(Clone, Debug)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>RecordBatchProjector {
     <span class="comment">// A vector of vectors, where each inner vector represents the index path to access a specific field in a nested structure.
     // E.g. [[0], [1, 2]] means the first field is accessed directly from the first column,
@@ -410,7 +416,7 @@
     }
 
     <span class="doccomment">/// Do projection with record batch
-    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>project_bacth(<span class="kw-2">&amp;</span><span class="self">self</span>, batch: RecordBatch) -&gt; <span class="prelude-ty">Result</span>&lt;RecordBatch&gt; {
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>project_batch(<span class="kw-2">&amp;</span><span class="self">self</span>, batch: RecordBatch) -&gt; <span class="prelude-ty">Result</span>&lt;RecordBatch&gt; {
         RecordBatch::try_new(
             <span class="self">self</span>.projected_schema.clone(),
             <span class="self">self</span>.project_column(batch.columns())<span class="question-mark">?</span>,
@@ -429,6 +435,7 @@
     <span class="kw">fn </span>get_column_by_field_index(batch: <span class="kw-2">&amp;</span>[ArrayRef], field_index: <span class="kw-2">&amp;</span>[usize]) -&gt; <span class="prelude-ty">Result</span>&lt;ArrayRef&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>rev_iterator = field_index.iter().rev();
         <span class="kw">let </span><span class="kw-2">mut </span>array = batch[<span class="kw-2">*</span>rev_iterator.next().unwrap()].clone();
+        <span class="kw">let </span><span class="kw-2">mut </span>null_buffer = array.logical_nulls();
         <span class="kw">for </span>idx <span class="kw">in </span>rev_iterator {
             array = array
                 .as_any()
@@ -439,8 +446,11 @@
                 ))<span class="question-mark">?
                 </span>.column(<span class="kw-2">*</span>idx)
                 .clone();
+            null_buffer = NullBuffer::union(null_buffer.as_ref(), array.logical_nulls().as_ref());
         }
-        <span class="prelude-val">Ok</span>(array)
+        <span class="prelude-val">Ok</span>(make_array(
+            array.to_data().into_builder().nulls(null_buffer).build()<span class="question-mark">?</span>,
+        ))
     }
 }
 
@@ -481,7 +491,7 @@
             RecordBatchProjector::new(schema.clone(), <span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">3</span>], field_id_fetch_func, |<span class="kw">_</span>| <span class="bool-val">true</span>)
                 .unwrap();
 
-        <span class="macro">assert!</span>(projector.field_indices.len() == <span class="number">2</span>);
+        <span class="macro">assert_eq!</span>(projector.field_indices.len(), <span class="number">2</span>);
         <span class="macro">assert_eq!</span>(projector.field_indices[<span class="number">0</span>], <span class="macro">vec!</span>[<span class="number">0</span>]);
         <span class="macro">assert_eq!</span>(projector.field_indices[<span class="number">1</span>], <span class="macro">vec!</span>[<span class="number">0</span>, <span class="number">1</span>]);
 
@@ -500,7 +510,7 @@
         ])) <span class="kw">as </span>ArrayRef;
         <span class="kw">let </span>batch = RecordBatch::try_new(schema, <span class="macro">vec!</span>[int_array, struct_array]).unwrap();
 
-        <span class="kw">let </span>projected_batch = projector.project_bacth(batch).unwrap();
+        <span class="kw">let </span>projected_batch = projector.project_batch(batch).unwrap();
         <span class="macro">assert_eq!</span>(projected_batch.num_columns(), <span class="number">2</span>);
         <span class="kw">let </span>projected_int_array = projected_batch
             .column(<span class="number">0</span>)
