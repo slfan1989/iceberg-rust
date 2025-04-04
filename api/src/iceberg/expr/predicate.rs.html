@@ -1459,6 +1459,14 @@
 <a href="#1459" id="1459">1459</a>
 <a href="#1460" id="1460">1460</a>
 <a href="#1461" id="1461">1461</a>
+<a href="#1462" id="1462">1462</a>
+<a href="#1463" id="1463">1463</a>
+<a href="#1464" id="1464">1464</a>
+<a href="#1465" id="1465">1465</a>
+<a href="#1466" id="1466">1466</a>
+<a href="#1467" id="1467">1467</a>
+<a href="#1468" id="1468">1468</a>
+<a href="#1469" id="1469">1469</a>
 </pre></div><pre class="rust"><code><span class="comment">// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -1608,12 +1616,12 @@
     }
 
     <span class="doccomment">/// Return the operator of this predicate.
-    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>op(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PredicateOperator {
+    </span><span class="kw">pub fn </span>op(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PredicateOperator {
         <span class="self">self</span>.op
     }
 
     <span class="doccomment">/// Return the term of this predicate.
-    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>term(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>T {
+    </span><span class="kw">pub fn </span>term(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>T {
         <span class="kw-2">&amp;</span><span class="self">self</span>.term
     }
 }
@@ -1660,17 +1668,18 @@
         <span class="self">Self </span>{ op, term, literal }
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>op(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PredicateOperator {
+    <span class="doccomment">/// Return the operator used by this predicate expression.
+    </span><span class="kw">pub fn </span>op(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PredicateOperator {
         <span class="self">self</span>.op
     }
 
     <span class="doccomment">/// Return the literal of this predicate.
-    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>literal(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Datum {
+    </span><span class="kw">pub fn </span>literal(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Datum {
         <span class="kw-2">&amp;</span><span class="self">self</span>.literal
     }
 
     <span class="doccomment">/// Return the term of this predicate.
-    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>term(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>T {
+    </span><span class="kw">pub fn </span>term(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>T {
         <span class="kw-2">&amp;</span><span class="self">self</span>.term
     }
 }
@@ -1722,16 +1731,17 @@
     }
 
     <span class="doccomment">/// Return the operator of this predicate.
-    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>op(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PredicateOperator {
+    </span><span class="kw">pub fn </span>op(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PredicateOperator {
         <span class="self">self</span>.op
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>literals(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>FnvHashSet&lt;Datum&gt; {
+    <span class="doccomment">/// Return the hash set of values compared against the term in this expression.
+    </span><span class="kw">pub fn </span>literals(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>FnvHashSet&lt;Datum&gt; {
         <span class="kw-2">&amp;</span><span class="self">self</span>.literals
     }
 
     <span class="doccomment">/// Return the term of this predicate.
-    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>term(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>T {
+    </span><span class="kw">pub fn </span>term(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>T {
         <span class="kw-2">&amp;</span><span class="self">self</span>.term
     }
 }
@@ -2185,6 +2195,12 @@
     </span>Set(SetExpression&lt;BoundReference&gt;),
 }
 
+<span class="kw">impl </span>BoundPredicate {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>and(<span class="self">self</span>, other: BoundPredicate) -&gt; BoundPredicate {
+        BoundPredicate::And(LogicalExpression::new([Box::new(<span class="self">self</span>), Box::new(other)]))
+    }
+}
+
 <span class="kw">impl </span>Display <span class="kw">for </span>BoundPredicate {
     <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; std::fmt::Result {
         <span class="kw">match </span><span class="self">self </span>{
@@ -2404,7 +2420,7 @@
         <span class="macro">assert_eq!</span>(result, expected);
     }
 
-    <span class="kw">fn </span>table_schema_simple() -&gt; SchemaRef {
+    <span class="kw">pub fn </span>table_schema_simple() -&gt; SchemaRef {
         Arc::new(
             Schema::builder()
                 .with_schema_id(<span class="number">1</span>)
