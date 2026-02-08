@@ -23,6 +23,7 @@ use iceberg::spec::{
 use pyo3::prelude::*;
 
 use crate::data_file::PyDataFile;
+use crate::error::to_py_err;
 
 #[pyclass]
 pub struct PyManifest {
@@ -195,11 +196,10 @@ impl PyManifestEntry {
 }
 
 #[pyfunction]
-pub fn read_manifest_entries(bs: &[u8]) -> PyManifest {
-    // TODO: Some error handling
-    PyManifest {
-        inner: Manifest::parse_avro(bs).unwrap(),
-    }
+pub fn read_manifest_entries(bs: &[u8]) -> PyResult<PyManifest> {
+    Manifest::parse_avro(bs)
+        .map(|inner| PyManifest { inner })
+        .map_err(to_py_err)
 }
 
 #[pyclass]
@@ -221,10 +221,10 @@ impl crate::manifest::PyManifestList {
 }
 
 #[pyfunction]
-pub fn read_manifest_list(bs: &[u8]) -> PyManifestList {
-    PyManifestList {
-        inner: ManifestList::parse_with_version(bs, FormatVersion::V2).unwrap(),
-    }
+pub fn read_manifest_list(bs: &[u8]) -> PyResult<PyManifestList> {
+    ManifestList::parse_with_version(bs, FormatVersion::V2)
+        .map(|inner| PyManifestList { inner })
+        .map_err(to_py_err)
 }
 
 pub fn register_module(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
