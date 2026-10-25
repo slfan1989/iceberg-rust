@@ -211,6 +211,8 @@
 <p><em>All</em> changes must be made in a branch and submitted as <a href="#github-pull-requests">pull requests</a>. iceberg-rust does not adopt any type of branch naming style, but please use something descriptive of your changes.</p>
 <h3 id="github-pull-requests"><a class="header" href="#github-pull-requests">GitHub Pull Requests</a></h3>
 <p>Once your changes are ready you must submit your branch as a <a href="https://github.com/apache/iceberg-rust/pulls">pull request</a>.</p>
+<h4 id="open-pull-request-limit"><a class="header" href="#open-pull-request-limit">Open Pull Request Limit</a></h4>
+<p>With coding agents, the number of open PRs now far exceeds our review capacity. To help reviewers focus on fewer PRs, users without write access are limited to <strong>3 open, non-draft PRs</strong> at a time. If you've reached the limit, wait for existing PRs to be merged, close some of them, or convert some to drafts until you have fewer than three open PRs before opening another.</p>
 <h4 id="title"><a class="header" href="#title">Title</a></h4>
 <p>The pull request title must follow the format outlined in the <a href="https://www.conventionalcommits.org">conventional commits spec</a>. <a href="https://www.conventionalcommits.org">Conventional commits</a> is a standardized format for commit messages. iceberg-rust only requires this format for commits on the <code>main</code> branch. And because iceberg-rust squashes commits before merging branches, this means that only the pull request title must conform to this format.</p>
 <p>The following are all good examples of pull request titles:</p>
@@ -225,6 +227,24 @@ refactor: Polish the implementation of read parquet
 <h4 id="merge-style"><a class="header" href="#merge-style">Merge Style</a></h4>
 <p>All pull requests are squash merged. We generally discourage large pull requests that are over 300-500 lines of diff. If you would like to propose a change that is larger we suggest coming onto <a href="mailto:dev@iceberg.apache.org">Iceberg's DEV mailing list</a> or <a href="https://join.slack.com/t/apache-iceberg/shared_invite/zt-1zbov3k6e-KtJfoaxp97YfX6dPz1Bk7A">Slack #rust Channel</a> and discuss it with us. This way we can talk through the solution and discuss if a change that large is even needed! This will produce a quicker response to the change and likely produce code that aligns better with our process.</p>
 <p>When a pull request is under review, please avoid using force push as it makes it difficult for reviewer to track changes. If you need to keep the branch up to date with the main branch, consider using <code>git merge</code> instead. </p>
+<h4 id="merging-an-urgent-pr"><a class="header" href="#merging-an-urgent-pr">Merging an urgent PR</a></h4>
+<p>Committers can merge an urgent, approved pull request without waiting for the merge queue or required checks (for example, a security fix while CI is stuck). Use this only when necessary; otherwise, let the merge queue run.</p>
+<ol>
+<li>
+<p>Join the <a href="https://github.com/orgs/apache/teams/iceberg-public"><code>apache/iceberg-public</code></a> team via <a href="https://gitbox.apache.org/boxer/">Boxer</a> (one-time; membership syncs in about 15 minutes).</p>
+</li>
+<li>
+<p>Get the pull request approved by a committer.</p>
+</li>
+<li>
+<p>If the pull request is in the merge queue, click <strong>Remove from queue</strong>.</p>
+</li>
+<li>
+<p>Merge it directly:</p>
+<pre><code class="language-sh">gh pr merge &lt;number&gt; --squash --admin
+</code></pre>
+</li>
+</ol>
 <h3 id="ci"><a class="header" href="#ci">CI</a></h3>
 <p>Currently, iceberg-rust uses GitHub Actions to run tests. The workflows are defined in <code>.github/workflows</code>.</p>
 <h2 id="setup"><a class="header" href="#setup">Setup</a></h2>
@@ -258,6 +278,14 @@ cargo 1.69.0 (6e9a83356 2023-04-12)
 tested in CI and developers have reproducible builds.</p>
 <p>In <code>Cargo.toml</code>, we specify the minimum version required to use iceberg-rust. This allows users to choose their
 dependency versions without always upgrading to the latest.</p>
+<p>Dependency licenses must comply with the <a href="https://www.apache.org/legal/resolved.html">ASF 3rd Party License Policy</a>.
+CI checks them against <code>deny.toml</code> with <code>cargo deny</code>; run <code>make check-dependency-licenses</code> to check locally. If a
+license is rejected, find its category in the policy:</p>
+<ul>
+<li>Category A: add the license to <code>allow</code>.</li>
+<li>Category B: add a per-crate entry to <code>exceptions</code>.</li>
+<li>Category X: not allowed by ASF policy; do not take the dependency.</li>
+</ul>
 <h2 id="code-of-conduct"><a class="header" href="#code-of-conduct">Code of Conduct</a></h2>
 <p>We expect all community members to follow our <a href="https://www.apache.org/foundation/policies/conduct.html">Code of Conduct</a>.</p>
 
